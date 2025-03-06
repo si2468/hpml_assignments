@@ -21,8 +21,6 @@ def main():
     if args.cuda and torch.cuda.is_available():
         device = "cuda"
 
-    print(device)
-
     # load the CIFAR-10 dataset and create the dataloader object
     train_loader = create_data_loader(args.data_path, batch_size=128, num_workers=args.num_workers)
     
