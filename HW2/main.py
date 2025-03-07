@@ -10,6 +10,9 @@ def main():
     parser.add_argument('--data_path', type=str, default='./data', help='Path to dataset')
     parser.add_argument('--num_workers', type=int, default=2, help='Number of dataloader workers')
     parser.add_argument('--optimizer', type=str, default='sgd', help='Optimizer type (sgd, adam, sgdnesterov, adagrad, adadelta)')
+    parser.add_argument('--disable_batch_normalization', action='store_true', help='Disable batch normaliaztion in Resnet')
+    parser.add_argument('--num_epochs', type=int, default=5, help='Number of epochs to train')
+    parser.add_argument('--torch_compile', action="store_true", help="Compile forward pass of Resnet")
     args = parser.parse_args()
     
     # Set device
@@ -21,7 +24,7 @@ def main():
     train_loader = create_data_loader(args.data_path, batch_size=128, num_workers=args.num_workers)
     
     # Initialize model
-    model = ResNet18(num_classes=10).to(device)
+    model = ResNet18(num_classes=10, disable_bn=args.disable_batch_normalization).to(device)
 
     # Define loss function
     criterion = torch.nn.CrossEntropyLoss()
@@ -39,7 +42,7 @@ def main():
     optimizer = optimizers.get(args.optimizer.lower(), optimizers["sgd"])
 
     # Train model
-    train_model(model, train_loader, optimizer, criterion, device, epochs=5)
+    train_model(model, train_loader, optimizer, criterion, device, epochs=args.num_epochs)
 
 if __name__ == '__main__':
     main()

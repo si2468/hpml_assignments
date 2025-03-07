@@ -16,7 +16,7 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
 
         training_iterator = iter(train_loader)
 
-        progress_bar = tqdm(range(len(train_loader)), desc=f"Epoch {epoch+1}", leave=False)
+        progress_bar = tqdm(range(len(train_loader)), desc=f"Epoch {epoch+1}", leave=False, disable=True)
 
         for _ in progress_bar:
             start_data = time.perf_counter()
@@ -43,10 +43,15 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
 
         epoch_loss = running_loss / len(train_loader)
         epoch_acc = 100. * correct / total
+        avg_training_time_per_batch = training_time / len(train_loader)  # NEW: Average training time per batch
         end_epoch = time.perf_counter()
 
-        print()
-        print(f'Epoch {epoch+1}: Loss: {epoch_loss:.4f}, Accuracy: {epoch_acc:.2f}%')
-        print(f"Epoch {epoch+1}: Data Loading Time: {data_loading_time:.4f}s")
-        print(f"Epoch {epoch+1}: Training time: {training_time:.4f}s")
-        print(f"Epoch {epoch+1}: Total time: {end_epoch - start_epoch:.4f}s")
+        print("\n" + "="*50)
+        print(f"Epoch {epoch+1} Summary:")
+        print(f"- Loss: {epoch_loss:.4f}")
+        print(f"- Accuracy (Top-1): {epoch_acc:.2f}%")
+        print(f"- Total Data Loading Time: {data_loading_time:.4f}s")
+        print(f"- Total Training Time: {training_time:.4f}s")
+        print(f"- Average Training Time per Batch: {avg_training_time_per_batch:.4f}s")  # NEW METRIC
+        print(f"- Total Epoch Time: {end_epoch - start_epoch:.4f}s")
+        print("="*50 + "\n")
