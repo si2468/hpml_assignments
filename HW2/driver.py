@@ -89,12 +89,12 @@ def run_experiment(commands: list, experiment: str):
 
 
 # Example usage:
-c2_experiment = [
+experiments_first = [
     (["python3 main.py"], "C2 - Default experiment"),
 ]
 
-# for cmds, experiment in experiments_first:
-#     run_experiment(cmds, experiment)
+for cmds, experiment in experiments_first:
+    run_experiment(cmds, experiment)
 
 #run_c3()
 
@@ -102,8 +102,8 @@ second_experiments = [
     #(["python3 main.py --num_workers 1", "python3 main.py --num_workers 8"], "C4 - 1 worker vs optimal num workers"),
     #(["python3 main.py --num_workers 8", "python3 main.py --num_workers 8 --disable_cuda"], "C5 - GPU vs CPU"),
     #(["python3 main.py --num_workers 4 --optimizer adam", "python3 main.py --num_workers 8 --optimizer adagrad", "python3 main.py --num_workers 8 --optimizer sgd", "python3 main.py --num_workers 8 --optimizer sgdnesterov", "python3 main.py --num_workers 8 --optimizer adadelta"], "C6 - optimizers"),
-    (["python3 main.py --num_workers 8 --disable_batch_normalization"], "C7 - Default without Batch Normalization"),
-    # ["python3 main.py --num_workers 16 --optimizer adadelta"]
+    #(["python3 main.py --num_workers 8 --disable_batch_normalization"], "C7 - Default without Batch Normalization"),
+    #(["python3 main.py --num_workers 8 --torch_compile"], "C8 - torch compile forward pass")
 ]
 
 for cmds, experiment in second_experiments:

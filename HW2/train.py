@@ -2,6 +2,7 @@ import time
 import torch
 from tqdm.auto import tqdm
 
+
 def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
     model.train()
     

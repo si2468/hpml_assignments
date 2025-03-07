@@ -1,8 +1,12 @@
 import argparse
-import torch
 from Resnet18 import ResNet18
+from Resnet18torchcompiled import ResNet18TorchCompiled
+import torch
 from Dataset import create_data_loader
 from train import train_model  # Import the training function
+import torch.nn as nn
+from torchsummary import summary
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -24,7 +28,34 @@ def main():
     train_loader = create_data_loader(args.data_path, batch_size=128, num_workers=args.num_workers)
     
     # Initialize model
-    model = ResNet18(num_classes=10, disable_bn=args.disable_batch_normalization).to(device)
+    if args.torch_compile:
+        model = ResNet18(num_classes=10, disable_bn=args.disable_batch_normalization, use_compile=args.torch_compile).to(device)
+    else:
+        model = ResNet18TorchCompiled(num_classes=10, disable_bn=args.disable_batch_normalization, use_compile=args.torch_compile).to(device)
+
+    def count_conv_layers(model):
+        return sum(1 for layer in model.modules() if isinstance(layer, nn.Conv2d))
+
+    # Count convolutional layers
+    num_conv_layers = count_conv_layers(model)
+    #print(num_conv_layers)
+
+    #print(model)
+    #print(model.fc)
+
+    for name, param in model.named_parameters():
+        print(f"{name}: {param.size()}")
+    # Use summary function to display model architecture
+    summary(model, input_size=(3, 32, 32))  # 3 channels, 32x32 image size
+
+    num_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    print(f"Number of trainable parameters: {num_trainable_params}")
+
+    # Count the number of parameters that require gradients
+    num_gradients = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    print(f"Number of gradients: {num_gradients}")
 
     # Define loss function
     criterion = torch.nn.CrossEntropyLoss()
