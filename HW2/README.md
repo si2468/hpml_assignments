@@ -101,6 +101,11 @@ num_workers_experiment.png
 - `driver.py` - Main entry point for running the experiments.
 - `main.py` - The core training script for testing data loading configurations.
 - `num_workers_experiment.png` - Graph showing the effect of different `num_workers` values.
+- `Resnet18.py` - Defines the model for classification
+- `param_count.py` - Extra file to count parameters and gradients in the model
+- `train.py` - Defines the training loop for the model
+- `Dataset.py` - Creates the dataloader
+- `requirements.txt` - Required packages
 
 ---
 

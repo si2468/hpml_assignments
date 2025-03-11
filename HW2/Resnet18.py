@@ -39,7 +39,7 @@ class ResNet18(nn.Module):
     def __init__(self, num_classes=10, disable_bn=False, compile_mode="none"):
         super(ResNet18, self).__init__()
         self.in_channels = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=2, padding=3, bias=False)
         self.bn1 = nn.Identity() if disable_bn else nn.BatchNorm2d(64)  # Remove BN if disabled
         self.relu = nn.ReLU(inplace=True)
 
