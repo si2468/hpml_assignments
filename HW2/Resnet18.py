@@ -36,7 +36,7 @@ class BasicBlock(nn.Module):
         return out
 
 class ResNet18(nn.Module):
-    def __init__(self, num_classes=10, disable_bn=False):
+    def __init__(self, num_classes=10, disable_bn=False, compile_mode="none"):
         super(ResNet18, self).__init__()
         self.in_channels = 64
         self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
@@ -52,6 +52,11 @@ class ResNet18(nn.Module):
 
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(512, num_classes)
+
+        self.compile_mode = compile_mode
+
+        if compile_mode != "none":
+            self.forward = torch.compile(self.forward, backend="inductor", mode=self.compile_mode)
 
     def _make_layer(self, block, out_channels, num_blocks, stride, disable_bn):
         strides = [stride] + [1] * (num_blocks - 1)

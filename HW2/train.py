@@ -7,6 +7,7 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
     model.train()
     
     for epoch in range(epochs):
+        torch.cuda.synchronize()
         start_epoch = time.perf_counter()
         running_loss = 0.0
         correct = 0
@@ -20,11 +21,14 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
         progress_bar = tqdm(range(len(train_loader)), desc=f"Epoch {epoch+1}", leave=False, disable=True)
 
         for _ in progress_bar:
+            torch.cuda.synchronize()
             start_data = time.perf_counter()
             inputs, labels = next(training_iterator)
             end_data = time.perf_counter()
+            torch.cuda.synchronize()
             data_loading_time += end_data - start_data
-
+            
+            torch.cuda.synchronize()
             start_train = time.perf_counter()
             inputs, labels = inputs.to(device), labels.to(device)
             optimizer.zero_grad()
@@ -33,6 +37,7 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
             loss.backward()
             optimizer.step()
             end_train = time.perf_counter()
+            torch.cuda.synchronize()
             training_time += end_train - start_train
 
             running_loss += loss.item()
@@ -46,6 +51,7 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
         epoch_acc = 100. * correct / total
         avg_training_time_per_batch = training_time / len(train_loader)  # NEW: Average training time per batch
         end_epoch = time.perf_counter()
+        torch.cuda.synchronize()
 
         print("\n" + "="*50)
         print(f"Epoch {epoch+1} Summary:")

@@ -16,7 +16,12 @@ def main():
     parser.add_argument('--optimizer', type=str, default='sgd', help='Optimizer type (sgd, adam, sgdnesterov, adagrad, adadelta)')
     parser.add_argument('--disable_batch_normalization', action='store_true', help='Disable batch normaliaztion in Resnet')
     parser.add_argument('--num_epochs', type=int, default=5, help='Number of epochs to train')
-    parser.add_argument('--torch_compile', action="store_true", help="Compile forward pass of Resnet")
+    parser.add_argument(
+        '--torch_compile', 
+        choices=['default', 'reduce-overhead', 'max-autotune', 'none'],
+        default='none',
+        help='Choose the Torch Compile mode: default, reduce-overhead, or max-autotune (default: default)'
+    )
     args = parser.parse_args()
     
     # Set device
@@ -27,35 +32,32 @@ def main():
     # Load dataset
     train_loader = create_data_loader(args.data_path, batch_size=128, num_workers=args.num_workers)
     
-    # Initialize model
-    if args.torch_compile:
-        model = ResNet18(num_classes=10, disable_bn=args.disable_batch_normalization, use_compile=args.torch_compile).to(device)
-    else:
-        model = ResNet18TorchCompiled(num_classes=10, disable_bn=args.disable_batch_normalization, use_compile=args.torch_compile).to(device)
+    torch_compile_mode = args.torch_compile.lower()
+    model = ResNet18(num_classes=10, disable_bn=args.disable_batch_normalization, compile_mode=torch_compile_mode).to(device)
 
     def count_conv_layers(model):
         return sum(1 for layer in model.modules() if isinstance(layer, nn.Conv2d))
 
     # Count convolutional layers
-    num_conv_layers = count_conv_layers(model)
+    num_conv_layers = sum(1 for layer in model.modules() if isinstance(layer, nn.Conv2d))
     #print(num_conv_layers)
 
     #print(model)
     #print(model.fc)
 
-    for name, param in model.named_parameters():
-        print(f"{name}: {param.size()}")
+    # for name, param in model.named_parameters():
+    #     print(f"{name}: {param.size()}")
     # Use summary function to display model architecture
-    summary(model, input_size=(3, 32, 32))  # 3 channels, 32x32 image size
+    #summary(model, input_size=(3, 32, 32))  # 3 channels, 32x32 image size
 
     num_trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    print(f"Number of trainable parameters: {num_trainable_params}")
+    #print(f"Number of trainable parameters: {num_trainable_params}")
 
     # Count the number of parameters that require gradients
     num_gradients = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    print(f"Number of gradients: {num_gradients}")
+    #print(f"Number of gradients: {num_gradients}")
 
     # Define loss function
     criterion = torch.nn.CrossEntropyLoss()
@@ -65,7 +67,7 @@ def main():
     optimizers = {
         "adam": torch.optim.Adam(model.parameters(), lr=lr, weight_decay=5e-4),
         "adagrad": torch.optim.Adagrad(model.parameters(), lr=lr, weight_decay=5e-4),
-        "adadelta": torch.optim.Adadelta(model.parameters(), lr=lr, weight_decay=5e-4),
+        "adadelta": torch.optim.Adadelta(model.parameters(), lr=lr, weight_decay=5e-4, rho=0.9),
         "sgdnesterov": torch.optim.SGD(model.parameters(), lr=lr, weight_decay=5e-4, nesterov=True, momentum=0.9),
         "sgd": torch.optim.SGD(model.parameters(), lr=lr, momentum=0.9, weight_decay=5e-4),
     }
