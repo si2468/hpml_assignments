@@ -106,6 +106,7 @@ num_workers_experiment.png
 - `train.py` - Defines the training loop for the model
 - `Dataset.py` - Creates the dataloader
 - `requirements.txt` - Required packages
+- `Resnet18.py` - Defines the model for classification
 
 ---
 
