@@ -3,7 +3,7 @@ import torch
 from tqdm.auto import tqdm
 
 
-def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
+def train_model(model, train_loader, optimizer, criterion, device, epochs=5, profile=False, profile_directory=None):
     model.train()
     
     for epoch in range(epochs):
@@ -19,6 +19,19 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
         training_iterator = iter(train_loader)
 
         progress_bar = tqdm(range(len(train_loader)), desc=f"Epoch {epoch+1}", leave=False, disable=True)
+
+        torch_profiler = None
+        if profile is True:
+            log_dir = f"./profile_experiments_{profile_directory}/epoch_{epoch+1}"
+            torch_profiler = torch.profiler.profile(
+                activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+                profile_memory=True,
+                on_trace_ready=torch.profiler.tensorboard_trace_handler(log_dir),
+                schedule=torch.profiler.schedule(wait=5, warmup=5, active=20, repeat=1),
+                record_shapes=True,
+                with_stack=True,
+            )
+            torch_profiler.__enter__()
 
         for _ in progress_bar:
             torch.cuda.synchronize()
@@ -46,6 +59,9 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5):
             correct += predicted.eq(labels).sum().item()
 
             progress_bar.set_postfix(loss=loss.item(), acc=100. * correct / total)
+
+            if profile is True:
+                torch_profiler.step()
 
         epoch_loss = running_loss / len(train_loader)
         epoch_acc = 100. * correct / total

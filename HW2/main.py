@@ -21,6 +21,9 @@ def main():
         default='none',
         help='Choose the Torch Compile mode: default, reduce-overhead, or max-autotune (default: default)'
     )
+    parser.add_argument("--profile_code", action="store_true", help="Profile certain parts of the code")
+    parser.add_argument('--profile_directory', type=str, default="Name of directory where this will be created - will automatically be put in ./profile_experiments_<profile_directory>/")
+
     args = parser.parse_args()
     
     # Set device
@@ -50,7 +53,7 @@ def main():
     optimizer = optimizers.get(args.optimizer.lower(), optimizers["sgd"])
 
     # Train model
-    train_model(model, train_loader, optimizer, criterion, device, epochs=args.num_epochs)
+    train_model(model, train_loader, optimizer, criterion, device, args.num_epochs, args.profile_code, args.profile_directory)
 
 if __name__ == '__main__':
     main()

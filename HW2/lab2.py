@@ -2,8 +2,9 @@ import subprocess
 import sys
 import matplotlib.pyplot as plt
 import re
+import argparse
 
-def run_c3():
+def run_c3(add_profiler: bool = False):
     print(f"\n\nRUNNING EXPERIMENT: C3 - Finding the optimal number of workers\n\n")
     num_workers_values = list(range(0, 17, 4))
     total_data_loading_times = []
@@ -22,7 +23,12 @@ def run_c3():
 
     for i, num_workers in enumerate(num_workers_values):
         command = f"python3 main.py --num_workers {num_workers}"
+        if add_profiler:
+            command += f" --profile_code --profile_directory c3_{i}_workers"
         print(f"\nRunning command: {command}\n")
+
+        if add_profiler:
+            print("\nGenerating logs: ", "c3_{i}_workers[i]", "\n")
 
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
@@ -87,7 +93,7 @@ def run_c3():
     return optimal_workers
 
 
-def run_experiment(commands: list, experiment: str):
+def run_experiment(commands: list, experiment: str, experiemnt_description:str, experiment_log_dirs: list, add_profiler: bool = False):
     """
     Runs a list of shell commands as subprocesses and streams their output in real-time.
 
@@ -95,10 +101,19 @@ def run_experiment(commands: list, experiment: str):
         commands (list): A list of shell commands to execute.
         experiment (str): Name of the experiment.
     """
-    print(f"\n\nRUNNING EXPERIMENT: {experiment}\n\n")
+    print(f"\n\nRUNNING EXPERIMENT: {experiment} - {experiemnt_description}\n\n")
 
-    for command in commands:
+    for i, command in enumerate(commands):
+        # if there is an associated experiment_log_dir, then we should profile this code
+        found_log = False
+        if i < len(experiment_log_dirs) and experiment_log_dirs[i] != "" and experiment_log_dirs[i] != None:
+            if add_profiler:
+                found_log = True
+                command += f" --profile_code --profile_directory {experiment_log_dirs[i]}"
         print(f"\n{command}\n")
+
+        if found_log:
+            print("\nGenerating logs:", experiment_log_dirs[i], "\n")
 
         process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
@@ -110,24 +125,28 @@ def run_experiment(commands: list, experiment: str):
         process.wait()  # Ensure process completes
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--profile_code', action='store_true', help='Run C2 through C5 with a profiler')
+args = parser.parse_args()
+
 # Example usage:
 experiments_first = [
-    (["python3 main.py"], "C2 - Default experiment"),
+    (["python3 main.py"], "C2", "Default experiment", ["c2"]),
 ]
 
-for cmds, experiment in experiments_first:
-    run_experiment(cmds, experiment)
+for cmds, experiment, experiment_description, experiment_log_dirs in experiments_first:
+    run_experiment(cmds, experiment, experiment_description, experiment_log_dirs, args.profile_code)
 
 # this line is here just in case we want to comment out the next line and not get optimal_workers - we will just assume it is 4 so that future experiements know this value
 optimal_workers = 4
-optimal_workers = run_c3()
+optimal_workers = run_c3(args.profile_code)
 
 second_experiments = [
-    (["python3 main.py --num_workers 1", f"python3 main.py --num_workers {optimal_workers}"], "C4 - 1 worker vs optimal num workers"),
-    #([f"python3 main.py --num_workers {optimal_workers}", f"python3 main.py --num_workers {optimal_workers} --disable_cuda"], "C5 - GPU vs CPU"),
-    ([f"python3 main.py --num_workers {optimal_workers} --optimizer adam", f"python3 main.py --num_workers {optimal_workers} --optimizer adagrad", f"python3 main.py --num_workers {optimal_workers} --optimizer sgd", f"python3 main.py --num_workers {optimal_workers} --optimizer sgdnesterov", f"python3 main.py --num_workers {optimal_workers} --optimizer adadelta"], "C6 - optimizers"),
-    ([f"python3 main.py --num_workers {optimal_workers} --disable_batch_normalization", f"python3 main.py --num_workers {optimal_workers}"], "C7 - Default without Batch Normalization"),
-    ([f"python3 main.py --num_workers {optimal_workers} --torch_compile default --num_epochs 10", f"python3 main.py --num_workers {optimal_workers} --torch_compile reduce-overhead --num_epochs 10", f"python3 main.py --num_workers {optimal_workers} --torch_compile max-autotune --num_epochs 10", f"python3 main.py --num_workers {optimal_workers} --torch_compile none --num_epochs 10"], "C8 - torch compile experiments")
+    (["python3 main.py --num_workers 1", f"python3 main.py --num_workers {optimal_workers}"], "C4", "1 worker vs optimal num workers", ["c4_1_worker", f"c4_{optimal_workers}"]),
+    ([f"python3 main.py --num_workers {optimal_workers}", f"python3 main.py --num_workers {optimal_workers} --disable_cuda"], "C5", "GPU vs CPU", ["c5_GPU", f"c5_CPU"]),
+    ([f"python3 main.py --num_workers {optimal_workers} --optimizer adam", f"python3 main.py --num_workers {optimal_workers} --optimizer adagrad", f"python3 main.py --num_workers {optimal_workers} --optimizer sgd", f"python3 main.py --num_workers {optimal_workers} --optimizer sgdnesterov", f"python3 main.py --num_workers {optimal_workers} --optimizer adadelta"], "C6", "optimizers", []),
+    ([f"python3 main.py --num_workers {optimal_workers} --disable_batch_normalization", f"python3 main.py --num_workers {optimal_workers}"], "C7", "Default without Batch Normalization", []),
+    ([f"python3 main.py --num_workers {optimal_workers} --torch_compile default --num_epochs 10", f"python3 main.py --num_workers {optimal_workers} --torch_compile reduce-overhead --num_epochs 10", f"python3 main.py --num_workers {optimal_workers} --torch_compile max-autotune --num_epochs 10", f"python3 main.py --num_workers {optimal_workers} --torch_compile none --num_epochs 10"], "C8", "torch compile experiments", [])
 ]
-for cmds, experiment in second_experiments:
-    run_experiment(cmds, experiment)
+for cmds, experiment, experiment_description, experiment_log_dirs in second_experiments:
+    run_experiment(cmds, experiment, experiment_description, experiment_log_dirs, args.profile_code)
