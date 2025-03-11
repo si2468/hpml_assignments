@@ -10,12 +10,9 @@ This repository contains Python code for running experiments to optimize data lo
 
 Ensure you have the following dependencies installed:
 
-- Python 3.x
-- Required Python packages (listed in `requirements.txt`)
-
 Install the required packages using:
 ```bash
-pip install -r requirements.txt
+pip install torch torchvision torchaudio matplotlib argparse torchsummary tqdm tensorboard
 ```
 
 ---
@@ -86,10 +83,33 @@ python3 main.py --num_workers <optimal_workers> --torch_compile none --num_epoch
 
 ---
 
+## Arguments for `main.py`
+
+The script `main.py` supports the following arguments:
+
+- `--disable_cuda`: Disable CUDA if available.
+- `--data_path <path>`: Path to dataset (default: `./data`).
+- `--num_workers <int>`: Number of dataloader workers (default: `2`).
+- `--optimizer <sgd|adam|sgdnesterov|adagrad|adadelta>`: Optimizer type (default: `sgd`).
+- `--disable_batch_normalization`: Disable batch normalization in ResNet.
+- `--num_epochs <int>`: Number of training epochs (default: `5`).
+- `--torch_compile <default|reduce-overhead|max-autotune|none>`: Torch Compile mode (default: `none`).
+- `--profile_code`: Enable code profiling.
+- `--profile_directory <path>`: Directory to save profiling results.
+
+---
+
+## Arguments for `lab2.py`
+
+The script `lab2.py` primarily runs experiments and supports:
+
+- `--profile_code`: Enables profiling for experiments C2 to C5.
+
+---
+
 ## Visualizing Results
 
 The `run_c3()` function generates a plot illustrating total data loading time versus the number of workers. The plot is saved as:
-
 ```
 num_workers_experiment.png
 ```
@@ -101,12 +121,10 @@ num_workers_experiment.png
 - `lab2.py` - Main entry point for running the experiments.
 - `main.py` - The core training script for testing data loading configurations.
 - `num_workers_experiment.png` - Graph showing the effect of different `num_workers` values.
-- `Resnet18.py` - Defines the model for classification
-- `param_count.py` - Extra file to count parameters and gradients in the model
-- `train.py` - Defines the training loop for the model
-- `Dataset.py` - Creates the dataloader
-- `requirements.txt` - Required packages
-- `Resnet18.py` - Defines the model for classification
+- `Resnet18.py` - Defines the model for classification.
+- `param_count.py` - Counts parameters and gradients in the model.
+- `train.py` - Defines the training loop for the model.
+- `Dataset.py` - Creates the dataloader.
 
 ---
 
@@ -129,6 +147,17 @@ THE OPTIMAL NUMBER OF WORKERS IS: 8
 ## Notes
 - If no optimal worker count is identified, the script defaults to `num_workers = 4`.
 - For best results, ensure your hardware supports parallel data loading efficiently.
+
+---
+
+## EXTRA CREDIT
+
+To run the extra credit portion (profiling), execute:
+```bash
+python3 lab2.py --profile_code
+```
+
+This will enable profiling for experiments C2 to C5 and save the results for further analysis.
 
 ---
 
