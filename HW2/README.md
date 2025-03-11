@@ -28,12 +28,12 @@ pip install -r requirements.txt
 
 To run all experiments sequentially, execute:
 ```bash
-python3 driver.py
+python3 lab2.py
 ```
 
 2. **Experiment Commands**
 
-Below are the commands for each experiment outlined in `driver.py`:
+Below are the commands for each experiment outlined in `lab2.py`:
 
 **C2 - Default experiment:**
 ```bash
@@ -98,7 +98,7 @@ num_workers_experiment.png
 
 ## Code Structure
 
-- `driver.py` - Main entry point for running the experiments.
+- `lab2.py` - Main entry point for running the experiments.
 - `main.py` - The core training script for testing data loading configurations.
 - `num_workers_experiment.png` - Graph showing the effect of different `num_workers` values.
 - `Resnet18.py` - Defines the model for classification
