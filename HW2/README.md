@@ -12,7 +12,7 @@ Ensure you have the following dependencies installed:
 
 Install the required packages using:
 ```bash
-pip install torch torchvision torchaudio matplotlib argparse torchsummary tqdm tensorboard
+pip install torch torchvision torchaudio matplotlib argparse torchsummary tqdm tensorboard torch-tb-profiler 
 ```
 
 ---

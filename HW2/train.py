@@ -78,3 +78,5 @@ def train_model(model, train_loader, optimizer, criterion, device, epochs=5, pro
         print(f"- Average Training Time per Batch: {avg_training_time_per_batch:.4f}s")  # NEW METRIC
         print(f"- Total Epoch Time: {end_epoch - start_epoch:.4f}s")
         print("="*50 + "\n")
+        if profile is True:
+            torch_profiler.__exit__(None, None, None)
