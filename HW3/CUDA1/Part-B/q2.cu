@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     addArrays<<<1, 1>>>(d_A, d_B, d_C, N); // Each call adds one element
     cudaDeviceSynchronize();
     stop_timer();
-    std::cout << "Scenario 1 (1 block, 1 thread): " << elapsed_time() << " seconds.\n";
+    std::cout << "1 block, 1 thread per block: " << elapsed_time() << " seconds.\n";
 
     // Copy result back to host
     cudaMemcpy(C, d_C, N * sizeof(float), cudaMemcpyDeviceToHost);
@@ -101,14 +101,14 @@ int main(int argc, char* argv[]) {
 
     // Scenario 2: 1 block, 256 threads
     int threadsPerBlock = 256;
-    int numBlocks = 1 ;
+    int numBlocks = 1;
 
     initialize_timer();
     start_timer();
     addArrays<<<numBlocks, threadsPerBlock>>>(d_A, d_B, d_C, N);
     cudaDeviceSynchronize();
     stop_timer();
-    std::cout << "Scenario 2 (1 block, 256 threads): " << elapsed_time() << " seconds.\n";
+    std::cout << "1 block, 256 threads per block: " << elapsed_time() << " seconds.\n";
 
     // Copy result back to host
     cudaMemcpy(C, d_C, N * sizeof(float), cudaMemcpyDeviceToHost);
@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
     addArrays<<<blocksPerGrid, threadsPerBlock>>>(d_A, d_B, d_C, N);
     cudaDeviceSynchronize();
     stop_timer();
-    std::cout << "Scenario 3 (Multiple blocks, 256 threads per block): " << elapsed_time() << " seconds.\n";
+    std::cout << blocksPerGrid << " blocks, 256 threads per block: " << elapsed_time() << " seconds.\n";
 
     // Copy result back to host
     cudaMemcpy(C, d_C, N * sizeof(float), cudaMemcpyDeviceToHost);

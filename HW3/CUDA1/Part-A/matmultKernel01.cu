@@ -17,7 +17,7 @@
 #include <stdio.h>
 
 // Define a gpu kernel to perform matrix multiplication
-// of A x B = C.
+// of A x B = C, but each thread should compute 4 output elements
 __global__ void MatMulKernel(Matrix A_mat, Matrix B_mat, Matrix C_mat){
     
     //C_mat.elements[100] = 3.14f;    
@@ -54,25 +54,11 @@ __global__ void MatMulKernel(Matrix A_mat, Matrix B_mat, Matrix C_mat){
   __shared__ float shared_A[FOOTPRINT_SIZE][FOOTPRINT_SIZE];
   __shared__ float shared_B[FOOTPRINT_SIZE][FOOTPRINT_SIZE];
 
-  int elements_per_thread = FOOTPRINT_SIZE * FOOTPRINT_SIZE / (BLOCK_SIZE * BLOCK_SIZE);
-
-
   // Loop over all sub matrices in block_row of A and block_col of B
   // required to compute Csub. Block multiply each pair of sub matrices
   // and accumulate results
   for (int m = 0;  m < (A_mat.width / FOOTPRINT_SIZE); ++m){
-    // Get Asub and Bsub descriptors
-    //Asub = &A.elements[A.stride * FOOTPRINT_SIZE * block_row + FOOTPRINT_SIZE * m]; // tile (block_row, m)
-    //Bsub = &B.elements[B.stride * FOOTPRINT_SIZE * m + FOOTPRINT_SIZE * block_col]; // tile (m, block_col)
 
-    // Copy ELEMENTS OF  ASub and Bsub into shared memory
-    // EACH THREAD loads ONE ELEMENT of ASub and ONE of Bsub
-    // Notice: it does not need to be the element it requires to
-    //         compute its Cvalue, as long as all elements are 
-    //         collaboratively read. 
-
-    // Notice: every thread declares shared_A and shared_B in shared memory
-    //         even though a thread block has only one shared_A and one shared_B
 
     // each thread will load a 2 x 2 submatrix from global memory into shared memory
 
@@ -80,44 +66,35 @@ __global__ void MatMulKernel(Matrix A_mat, Matrix B_mat, Matrix C_mat){
     int tile_origin_row_A = block_row * FOOTPRINT_SIZE;
     int tile_origin_col_A = m * FOOTPRINT_SIZE;
 
-    for (int i = 0; i < elements_per_thread / 2; ++i) {
-        for (int j = 0; j < elements_per_thread / 2; ++j) {
-            // Each thread loads 4 elements into shared memory
-
-            // sh row and sh col are the indices in a 32 x 32 tile -> this also corresponds to the 32 x 32 tiles in global memory. 
-            // Just have to find which tile it is
-            int sh_row = thread_row * elements_per_thread / 2 + i;
-            int sh_col = thread_col * elements_per_thread / 2 + j;
-
-            int global_row = tile_origin_row_A + sh_row;
-            int global_col = tile_origin_col_A + sh_col;
-
-            shared_A[sh_row][sh_col] = A[global_row * A_mat.stride + global_col];
-        }
-    }
-    __syncthreads();
-
+    int base_sh_row = thread_row * 2;
+    int base_sh_col = thread_col * 2;
+    int base_global_row = tile_origin_row_A + base_sh_row;
+    int base_global_col = tile_origin_col_A + base_sh_col;
+    
+    shared_A[base_sh_row + 0][base_sh_col + 0] = A[(base_global_row + 0) * A_mat.stride + (base_global_col + 0)];
+    shared_A[base_sh_row + 0][base_sh_col + 1] = A[(base_global_row + 0) * A_mat.stride + (base_global_col + 1)];
+    shared_A[base_sh_row + 1][base_sh_col + 0] = A[(base_global_row + 1) * A_mat.stride + (base_global_col + 0)];
+    shared_A[base_sh_row + 1][base_sh_col + 1] = A[(base_global_row + 1) * A_mat.stride + (base_global_col + 1)];
+    
     // current tile start points for shared matrix B
     int tile_origin_row_B = m * FOOTPRINT_SIZE;
     int tile_origin_col_B = block_col * FOOTPRINT_SIZE;
+
+    base_sh_row = thread_row * 2;
+    base_sh_col = thread_col * 2;
+    base_global_row = tile_origin_row_B + base_sh_row;
+    base_global_col = tile_origin_col_B + base_sh_col;
+
+    shared_B[base_sh_row + 0][base_sh_col + 0] = B[(base_global_row + 0) * B_mat.stride + (base_global_col + 0)];
+    shared_B[base_sh_row + 0][base_sh_col + 1] = B[(base_global_row + 0) * B_mat.stride + (base_global_col + 1)];
+    shared_B[base_sh_row + 1][base_sh_col + 0] = B[(base_global_row + 1) * B_mat.stride + (base_global_col + 0)];
+    shared_B[base_sh_row + 1][base_sh_col + 1] = B[(base_global_row + 1) * B_mat.stride + (base_global_col + 1)];
+
     
-    for (int i = 0; i < elements_per_thread / 2; ++i) {
-        for (int j = 0; j < elements_per_thread / 2; ++j) {
-            int sh_row = thread_row * elements_per_thread / 2 + i;
-            int sh_col = thread_col * elements_per_thread / 2 + j;
-    
-            int global_row = tile_origin_row_B + sh_row;
-            int global_col = tile_origin_col_B + sh_col;
-    
-            shared_B[sh_row][sh_col] = B[global_row * B_mat.stride + global_col];
-        }
-    }
-    
-    // Synchronize to ensure all elements are read
+    // Synchronize to ensure all elements are read - at this point all threads have loaded their 2 x 2 submatrices into shared memory
     __syncthreads();
 
-    // Perform the multiplication of one row of A with one column of B
-    // This is the dot product between the row from A and column from B
+    // Perform required multiplications
 
     #pragma unroll
     for (int k = 0; k < FOOTPRINT_SIZE; ++k) {
@@ -136,7 +113,6 @@ __global__ void MatMulKernel(Matrix A_mat, Matrix B_mat, Matrix C_mat){
     }
 
     // Write the computed Cvalue to the output matrix C at the appropriate location
-    __syncthreads();
 
     int global_row = block_row * FOOTPRINT_SIZE + r0;
     int global_col = block_col * FOOTPRINT_SIZE + c0;

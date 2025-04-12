@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
     addArrays<<<1, 1>>>(A, B, C, N);
     cudaDeviceSynchronize();
     stop_timer();
-    std::cout << "Scenario 1 (1 block, 1 thread): " << elapsed_time() << " seconds.\n";
+    std::cout << "1 block, 1 thread per block: " << elapsed_time() << " seconds.\n";
 
     if (verifyResults(A, B, C, N)) {
         std::cout << "Array addition is correct!\n";
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     addArrays<<<numBlocks, threadsPerBlock>>>(A, B, C, N);
     cudaDeviceSynchronize();
     stop_timer();
-    std::cout << "Scenario 2 (1 block, 256 threads): " << elapsed_time() << " seconds.\n";
+    std::cout << "1 block, 256 threads per block: " << elapsed_time() << " seconds.\n";
 
     if (verifyResults(A, B, C, N)) {
         std::cout << "Array addition is correct!\n";
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
     addArrays<<<blocksPerGrid, threadsPerBlock>>>(A, B, C, N);
     cudaDeviceSynchronize();
     stop_timer();
-    std::cout << "Scenario 3 (Multiple blocks, 256 threads per block): " << elapsed_time() << " seconds.\n";
+    std::cout << blocksPerGrid << " blocks, 256 threads per block: " << elapsed_time() << " seconds.\n";
 
     if (verifyResults(A, B, C, N)) {
         std::cout << "Array addition is correct!\n";

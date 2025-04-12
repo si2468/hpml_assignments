@@ -2,7 +2,15 @@
 
 ## **Overview**
 
-This repository contains the code for a CUDA-based assignment for the course COMS E6998 at Columbia University, Spring 2024. The assignment involves various CUDA programming tasks, including vector addition, matrix multiplication, and convolution, leveraging both CPU and GPU computation.
+This repository contains the code for a CUDA-based assignment for the course COMS E6998 at Columbia University, Spring 2025. The assignment involves various CUDA programming tasks, including vector addition, matrix multiplication, and convolution, leveraging both CPU and GPU computation.
+
+The project is split into three different parts. Each is in its own folder, Part-A, Part-B, Part-C. Each folder contains a make file that can be used to generate all object files for that experiment. 
+
+1) **Vector and Matrix operations in CUDA (Part-A)** - Vector addition with and without memory coelescing, and then shared memory tiled matrix multiplication with and without thread coarsening. 
+
+2) **Unified Memory (Part-B)** - Vector addition in three separate forms: CPU only, GPU without unified memory, and GPU with unified memory. Both GPU experiments have three sub-experiments: 1 block and 1 thread per block, 1 block and 256 threads per block, and 256 threads per block with the number of blocks such that every thread corresponds to one input element. We will graph the results so that we can compare these sub-experiments and get insights into the effects of using unified memory. 
+
+3) **Convolution (Part-C)** - Perform convolution in 4 different ways: First with a naive CUDA kernel, second with a shared memory, tiled, CUDA kernel, and third with the cuDNN library, and finally with the triton API. 
 
 The `Makefile` provided automates the compilation and execution of multiple CUDA programs, each demonstrating different GPU programming techniques. The code uses both basic and expanded kernels to implement operations like vector addition and matrix multiplication, and also includes optimizations such as memory management.
 
@@ -21,17 +29,58 @@ Before running the CUDA programs, ensure the following software is installed:
 
 ## **Directory Structure**
 
-The project consists of the following files:
+## Build System and Source Files
 
-- `Makefile`: The build system that compiles all CUDA programs.
-- `timer.cu`, `timer.h`: Provides a timer function to measure the execution time of CUDA programs.
-- `vecadd.cu`, `vecaddKernel.h`: Implements basic vector addition.
-- `vecaddKernel00.cu`, `vecaddKernel01.cu`: Different versions of the vector addition kernel, used for comparison.
-- `matmult.cu`, `matmultKernel.h`: Implements basic matrix multiplication.
-- `matmultKernel00.cu`, `matmultKernel01.cu`: Different matrix multiplication kernels, with optimizations.
-- `array_add.cpp`: Performs array addition using a CPU implementation.
-- `array_add_gpu_non_unified.cu`, `array_add_gpu_unified.cu`: GPU-based array addition implementations.
-- `convolution.cu`: Implements a naive convolution kernel.
+- **`Makefile`**: The build systems that compiles all programs that need compilation in all three parts (A, B, C).
+- **Timer Utilities**:
+  - `timer.cu`, `timer.h`: Utility code for timing CUDA executions. Compiled as `timer.o` and linked to multiple executables. Built in makefiles automatically with `make`
+
+---
+
+## Part-A: Vector Addition and Matrix Multiplication
+
+### Vector Addition
+
+- `vecadd.cu`, `vecaddKernel.h`: Host code shared by both vector addition variants.
+- `vecaddKernel00.cu`: Naive vector addition kernel without memory coalescing.  
+  🔹 **Executable**: `vecadd00`
+- `vecaddKernel01.cu`: Optimized vector addition kernel with memory coalescing.  
+  🔹 **Executable**: `vecadd01`
+
+### Matrix Multiplication
+
+- `matmult.cu`, `matmultKernel.h`: Host code for invoking matrix multiplication kernels.
+- `matmultKernel00.cu`: Shared memory matrix multiplication where each thread computes 1 output element.  
+  🔹 **Executable**: `matmult00`
+- `matmultKernel01.cu`: Optimized kernel where each thread computes 4 output elements (with `FOOTPRINT_SIZE=32`).  
+  🔹 **Executable**: `matmult01`
+
+---
+
+## Part-B: Array Addition
+
+- `q1.cpp`: CPU-based array addition.  
+  🔹 **Executable**: `array_add_cpu`
+- `q2.cu`: CUDA kernel using **non-unified memory** with memory coalescing.  
+  🔹 **Executable**: `array_add_gpu_non_unified`
+- `q3.cu`: CUDA kernel using **unified memory** with memory coalescing.  
+  🔹 **Executable**: `array_add_gpu_unified`
+- `q4.py`: Python program to save plots of results from q1, q2, and q3  
+  🔹 **Executable**: `python3 q4.py`
+
+
+---
+
+## Part-C: Convolution 
+
+- `c1.cu`: Naive CUDA implementation of convolution.  
+  🔹 **Executable**: `conv_naive`
+- `c2.cu`: Shared memory tiled implementation of convolution.  
+  🔹 **Executable**: `conv_tiled`
+- `c3.cu`: cuDNN-based implementation of convolution.  
+  🔹 **Executable**: `conv_cudnn`
+- `c5.ipynb`: triton-based implementation of convolution.  
+  🔹 **Executable**: python notebook
 
 ## **How to Use the Makefile**
 
@@ -126,11 +175,13 @@ After compiling the project, you may want to clean up the generated object files
 ./matmult01
 
 # Group 3: Array Addition
-./array_add 10                # Run with an array of 10 million elements
+./array_add_cpu 10                # Run with an array of 10 million elements
 ./array_add_gpu_non_unified 10  # Run with an array of 10 million elements
 ./array_add_gpu_unified 10      # Run with an array of 10 million elements
 
 # Group 4: Convolution
-./conv
+./conv_naive
+./conv_tiled
+./conv_cudnn
 
 
